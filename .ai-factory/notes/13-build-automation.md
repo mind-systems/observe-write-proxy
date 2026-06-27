@@ -21,7 +21,7 @@ A repo-root `Makefile` that captures the few commands the project actually needs
 
 ## Edge cases / watch
 
-- `bin/` must be gitignored. Confirm the repo's `.gitignore` already excludes built binaries (a broad Go-style ignore of compiled output, or an explicit `/bin/`); if it does not, add `/bin/` — **state this in the task, do not edit files here**. The binary is a build artifact, never committed.
+- `bin/` must be gitignored. The repo's `.gitignore` currently ignores `/observe-write-proxy` (an old root-level binary name) but **does NOT contain `/bin/`** — verified at `.gitignore:10-12`. Since `make build` outputs to `bin/proxy`, add `/bin/` to `.gitignore` as part of this task. The binary is a build artifact, never committed.
 - `CGO_ENABLED=0` belongs **inline on the `build` recipe**, not exported globally from the shell, so the guarantee travels with the Makefile and survives a contributor whose environment has cgo enabled by default.
 - `make` runs each recipe line in its own subshell; `CGO_ENABLED=0 go build …` is a single command on one line, so the env var correctly scopes to that `go build` — keep it one line.
 - Reproducibility is best-effort here: `-s -w` removes debug metadata, but fully reproducible builds (trimmed paths) would also want `-trimpath`. **Decision:** match the canon flag string exactly (`-ldflags "-s -w"`) for now; note `-trimpath` as an available future hardening, do not add it unprompted.

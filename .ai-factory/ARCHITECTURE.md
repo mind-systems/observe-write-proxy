@@ -17,7 +17,7 @@ Concrete package layout is a starting point — refine as the service takes shap
 ## Dependency Rules
 
 - `proxy/` → `store/` only (token lookup) + the upstream Loki URL from config
-- `admin/` → `store/` (mint/list/revoke) + `grafana/` (validate operator)
+- `admin/` → `store/` (mint/list/toggle/delete) + `grafana/` (validate operator)
 - `store/` → nothing outside itself
 - `grafana/` → nothing in this repo
 - ❌ `proxy/` never imports `admin/` or `grafana/` — the write plane has no Grafana dependency
@@ -35,4 +35,4 @@ Write auth (proxy tokens, SQLite, instant revoke) and admin auth (Grafana token,
 
 ## Token Store Shape
 
-Per token: `name` (display-only, no authorization meaning), `token` (plaintext value), an `active` flag, plus creation metadata. The name is never matched against forwarded payloads. Revoking flips `active` to false and takes effect on the next write; rows are never deleted, so a token can be reactivated.
+Per token: `name` (display-only, no authorization meaning), `token` (plaintext value), an `active` flag, plus creation metadata. The name is never matched against forwarded payloads. Deactivating flips `active` to false and takes effect on the next write (reversible — the row is kept); deleting removes the row permanently. Both are admin operations.

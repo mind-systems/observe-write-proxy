@@ -18,6 +18,7 @@ The single static proxy binary carries the admin GUI inside itself and serves it
 
 - With `http.ServeMux`, the `/` pattern is a catch-all prefix and will shadow every unregistered path. The specific routes (`/v1/logs`, `/api/tokens`, `/healthz`) must be registered as their own patterns so the mux's longest-prefix match routes them to their handlers before falling back to the `/` file server. Verify a request to `/v1/logs` and `/api/tokens` is never answered by the file server.
 - `fs.Sub` returns an error if `web/` is missing from the embed; treat a failed `fs.Sub` at startup as fatal wiring (the binary is mis-built), not a runtime 404.
+- **`web/` exists at compile time** — a minimal placeholder `web/index.html` was created ahead of Phase 6 so the `//go:embed web` directive compiles immediately. Task 12 overwrites it with the real GUI. No action needed here beyond wiring the embed.
 - The GUI is a single page with no client-side router, so no SPA deep-link fallback / rewrite-to-index is needed. A miss under `/` should be a plain `404` from the file server, not a redirect to `index.html`.
 - Keep `http.FileServer`'s default directory listing in mind: only the intended `web/` assets are embedded, so a listing exposes nothing sensitive, but the page set should stay limited to the GUI files.
 

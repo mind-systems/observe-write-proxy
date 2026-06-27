@@ -5,7 +5,7 @@
 
 ## Goal
 
-Give `internal/store` the four operations the proxy needs over the `tokens` table: create a write token, list all tokens, toggle a token's active flag, and look up a presented token for per-request write auth. Together they realise the canon's "never delete, only deactivate" model and the rule that a write token is valid only when it exists AND `active=1`.
+Give `internal/store` the operations the proxy needs over the `tokens` table: create a write token, list all tokens, toggle a token's active flag, delete a token outright, and look up a presented token for per-request write auth. Deactivation (the active flag) is the reversible soft-stop; delete is the permanent hard-remove. A write token is valid only when it exists AND `active=1`.
 
 ## Design
 
@@ -18,7 +18,7 @@ Give `internal/store` the four operations the proxy needs over the `tokens` tabl
   Map `active INTEGER` ↔ `bool` and `created_at INTEGER` ↔ `int64` at the scan boundary.
 
 - `Create(name string) (Token, error)` on `*Store`:
-  - Generate `id`: random, URL-safe (e.g. `base64url` of ~16 random bytes from `crypto/rand`).
+  - Generate `id`: random, URL-safe (`base64.RawURLEncoding` of exactly **16 random bytes** from `crypto/rand` — same encoding as the token value, no padding).
   - Generate `token = "otlp_" + base64url(32 random bytes)` using `crypto/rand`. Use RawURLEncoding (no `=` padding) so the token is a clean opaque string.
   - `created_at = time.Now().Unix()`.
   - `INSERT INTO tokens(id, name, token, active, created_at) VALUES(?, ?, ?, 1, ?)` — always inserted active.
@@ -30,8 +30,12 @@ Give `internal/store` the four operations the proxy needs over the `tokens` tabl
 
 - `SetActive(id string, active bool) error`:
   - `UPDATE tokens SET active=? WHERE id=?` (bind `1`/`0`).
-  - This is the single deactivate/reactivate operation. There is **no** delete method anywhere in the package.
+  - This is the deactivate/reactivate operation — a reversible soft-stop that keeps the row (distinct from `Delete` below).
   - **Decision:** return an error (or a not-found signal) when no row matched, so the admin handler can answer `404` for an unknown id rather than silently succeeding — check `RowsAffected()`.
+
+- `Delete(id string) error`:
+  - `DELETE FROM tokens WHERE id=?` — the permanent hard-remove, distinct from deactivation. Once deleted the row is gone and the token cannot be reactivated; only this method issues a `DELETE`.
+  - Like `SetActive`, check `RowsAffected()` so an unknown id surfaces as `404` rather than a silent success.
 
 - `Lookup(token string) (Token, bool, error)`:
   - `SELECT id, name, token, active, created_at FROM tokens WHERE token=? AND active=1`.
@@ -58,4 +62,4 @@ Give `internal/store` the four operations the proxy needs over the `tokens` tabl
 - `List()` returns all tokens — active and inactive — with name, plaintext token, active flag, and created_at.
 - `SetActive(id, false)` then `SetActive(id, true)` toggles the row without deleting it; an unknown id is reported, not silently ignored.
 - `Lookup` returns `ok=true` for an active token and `ok=false` for an inactive or unknown one, filtering on `active` in the query.
-- No operation in the package issues a `DELETE`.
+- `Delete(id)` permanently removes a token (distinct from `SetActive` deactivation); an unknown id is reported, not silently ignored.

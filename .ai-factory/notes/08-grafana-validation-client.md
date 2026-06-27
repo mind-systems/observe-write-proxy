@@ -11,7 +11,7 @@ A small client that answers one question for the admin plane: "is this Grafana t
 
 - New package `internal/grafana`. It is imported by `admin` only; `proxy` never imports it (write plane and admin plane stay disjoint).
 - A `Client` type built once at startup:
-  - `baseURL string` — the resolved Grafana base URL (default `http://localhost:3030`, from config), trailing slash normalised once at construction so request URLs do not double up.
+  - `baseURL string` — the resolved Grafana base URL (default `http://localhost:3000`, from config), trailing slash normalised once at construction so request URLs do not double up.
   - `http *http.Client` — with an explicit request timeout (sane default, e.g. 10s) so a hung Grafana cannot pin the request goroutine.
 - Constructor `NewClient(baseURL string) (*Client, error)` — validate/normalise the base URL once and fail fast on a malformed value.
 - `Validate(ctx context.Context, token string) (bool, error)`:
@@ -22,7 +22,7 @@ A small client that answers one question for the admin plane: "is this Grafana t
     - `401` / `403` → `(false, nil)` — a definite "not valid". This is a real verdict, not an error.
     - any other status (`5xx`, `404`, unexpected) → `(false, err)` — Grafana answered but not in a way that constitutes a verdict; treat as "could not validate", not "invalid".
     - a non-nil error from `client.Do` (connection refused, DNS, TLS, timeout) → `(false, err)`.
-- **Decision — no role/permission gate.** Per canon, any valid Grafana token is accepted; the proxy has no user accounts and reads no role, org, or permission off the `/api/user` response. `200` alone means "allowed to administer". `/api/user` is chosen because it is the cheapest authenticated read that any valid token can perform, so it doubles as a pure validity probe without implying a privilege check.
+- **Decision — no role/permission gate.** Per canon, any valid Grafana token is accepted; the proxy has no user accounts and reads no role, org, or permission off the `/api/user` response. `200` alone means "allowed to administer". `/api/user` is chosen because it is the cheapest authenticated read that any valid token can perform, so it doubles as a pure validity probe without implying a privilege check. **Verified against the local stack:** a Grafana service-account token (`glsa_…`) returns `200` from `GET /api/user` (identity `sa-…`, `orgId 1`); a bogus token returns `401` — so this probe works for the service-account tokens the operator pastes. The operator token is supplied at runtime (pasted in the GUI, or `GRAFANA_TOKEN` for scripts) and is never committed.
 
 ## Edge cases / watch
 

@@ -5,6 +5,7 @@
 *.swp
 
 # Go
+/bin/
 /observe-write-proxy
 *.exe
 *.test

@@ -22,14 +22,15 @@
   - `/healthz` — health. **Real** handler: respond `200 OK` with a tiny static body (e.g. `ok`). No config or store dependency — it must answer even if Loki/Grafana/SQLite are down, since it reports that *this process* is alive, not its upstreams.
   - Placeholders return a clear "not implemented yet" response (`501` is reasonable) rather than a silent `200`, so a half-wired build is obvious during development.
 - Timeouts on the `http.Server` (the "sane timeouts" the canon's never-break-ingestion rule wants at the edge):
-  - `ReadHeaderTimeout` and `ReadTimeout` — bound slow-header / slow-body clients.
-  - `WriteTimeout` — bound a stuck response.
-  - `IdleTimeout` — reap idle keep-alive connections.
-  - **Decision:** choose generous values (e.g. read/write ~30s, idle ~120s) because the write plane forwards OTLP log batches whose upstream Loki round-trip must fit inside `WriteTimeout`; the forward timeout proper is tuned in the proxy task, but the server envelope must not be tighter than it.
+  - `ReadHeaderTimeout: 10 * time.Second` — bound slow-header clients (a short value is standard; the write plane's header is tiny).
+  - `ReadTimeout: 30 * time.Second` — bound a slow body; must be long enough for large OTLP batches to arrive.
+  - `WriteTimeout: 30 * time.Second` — bound a stuck response; the write plane's upstream Loki round-trip (the forwarder's own `30s` client timeout) must fit inside this, so the server envelope must not be tighter than the proxy's forward timeout.
+  - `IdleTimeout: 120 * time.Second` — reap idle keep-alive connections.
+  - **Decision:** values above are locked. `ReadHeaderTimeout` is intentionally shorter than `ReadTimeout` to prevent slow-header attacks while still allowing large OTLP batch bodies.
 - Graceful shutdown:
   - `ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)` at the top; `defer stop()`.
   - After the server goroutine is launched, `<-ctx.Done()` blocks `main` until a signal arrives.
-  - On signal, create a bounded `shutdownCtx` with `context.WithTimeout` (e.g. ~10s) and call `srv.Shutdown(shutdownCtx)`. `Shutdown` stops accepting new connections and waits for in-flight handlers to finish, which is what "without dropping in-flight requests" requires.
+  - On signal, create a bounded `shutdownCtx` with `context.WithTimeout(ctx, 10*time.Second)` and call `srv.Shutdown(shutdownCtx)`. `Shutdown` stops accepting new connections and waits for in-flight handlers to finish, which is what "without dropping in-flight requests" requires.
   - If `Shutdown` returns an error (timeout exceeded), log it and exit non-zero; otherwise exit `0`.
 
 ## Edge cases / watch

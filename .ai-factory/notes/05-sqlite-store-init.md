@@ -26,7 +26,7 @@ Stand up the persistence layer for write-plane tokens: a new `internal/store` pa
     - `token TEXT NOT NULL UNIQUE`
     - `active INTEGER NOT NULL DEFAULT 1`
     - `created_at INTEGER NOT NULL`
-  - `active` is the boolean (1 = active, 0 = inactive) that backs deactivation; rows are never deleted, only flipped. `token` carries a `UNIQUE` constraint so duplicate token strings are rejected at the storage layer.
+  - `active` is the boolean (1 = active, 0 = inactive) that backs deactivation; flipping it deactivates a token without removing the row (reversible), while a separate hard-delete removes rows outright. `token` carries a `UNIQUE` constraint so duplicate token strings are rejected at the storage layer.
 
 ## Edge cases / watch
 

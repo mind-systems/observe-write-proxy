@@ -10,11 +10,11 @@ A `README.md` section that tells an operator how to run the proxy natively on th
 ## Design
 
 - Edit `README.md` at the repo root, adding (or filling out) a "Running it" section and a "Configuration" section. Prose, not tables-of-methods; no directory trees; English; lean. Describe behavior, not code.
-- **Running it** — explain that the proxy is a single native binary: build with `make build`, then run `./bin/proxy` (or `make run` for a source run). It is the only process to start beyond the Loki and Grafana the stack already runs locally; no Docker on the dev machine. State the obvious default end state in one line: with everything at defaults it listens on `:4318`, forwards to a local Loki at `:3100`, validates admin tokens against a local Grafana at `:3030`, and keeps its token store in `./proxy.db` in the working directory.
+- **Running it** — explain that the proxy is a single native binary: build with `make build`, then run `./bin/proxy` (or `make run` for a source run). It is the only process to start beyond the Loki and Grafana the stack already runs locally; no Docker on the dev machine. State the obvious default end state in one line: with everything at defaults it listens on `:4318`, forwards to a local Loki at `:3100`, validates admin tokens against a local Grafana at `:3000`, and keeps its token store in `./proxy.db` in the working directory.
 - **Configuration** — describe the four settings, each as a sentence naming the env var, what it controls, and its default. Keep it prose; the four are:
   - `PROXY_LISTEN` — the address the proxy binds; default `:4318`.
   - `LOKI_URL` — the Loki **base** URL; the proxy forwards writes to that base plus `/otlp/v1/logs`; default `http://localhost:3100`.
-  - `GRAFANA_URL` — the Grafana base URL used to validate admin (Grafana) tokens; default `http://localhost:3030`.
+  - `GRAFANA_URL` — the Grafana base URL used to validate admin (Grafana) tokens; default `http://localhost:3000`.
   - `DB_PATH` — filesystem path to the SQLite token store; default `./proxy.db`.
   - Mention that each also has a command-line flag fallback (`-listen`, `-loki-url`, `-grafana-url`, `-db-path`) and that a flag passed on the command line overrides the environment, which overrides the default — one sentence, no flag table.
 - **Pointing an SDK at the proxy** — explain that a consuming `observe-*` SDK reaches the proxy exactly as it would reach Loki's OTLP endpoint, with two `init`-time settings: set the OTLP logs endpoint to the proxy's `/v1/logs` (e.g. `http://localhost:4318/v1/logs` locally), and pass a write token through the SDK's `init` `headers` as `Authorization: Bearer <token>`. The token is one minted in the admin GUI (forward-reference the admin plane / GUI, do not document minting here). Make the credential's role clear: this Bearer token is the proxy's **own** write token, checked per request against its store — it is not a Grafana token, and the SDK never talks to Grafana. State that an unknown or deactivated token gets a `401` so a misconfigured SDK fails loudly rather than silently dropping logs.
@@ -37,5 +37,5 @@ A `README.md` section that tells an operator how to run the proxy natively on th
 ## Done when
 
 - `README.md` has a native local-run section: build with `make build`, run the single binary, no Docker.
-- The four settings — `PROXY_LISTEN`, `LOKI_URL`, `GRAFANA_URL`, `DB_PATH` — are each documented in prose with their canon defaults (`:4318`, `http://localhost:3100`, `http://localhost:3030`, `./proxy.db`).
+- The four settings — `PROXY_LISTEN`, `LOKI_URL`, `GRAFANA_URL`, `DB_PATH` — are each documented in prose with their canon defaults (`:4318`, `http://localhost:3100`, `http://localhost:3000`, `./proxy.db`).
 - The README shows how a consuming SDK is pointed at the proxy: OTLP endpoint at the proxy's `/v1/logs` plus an `Authorization: Bearer <token>` header carrying a proxy write token, with the `401`-on-bad-token behavior noted.

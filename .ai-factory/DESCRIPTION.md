@@ -8,8 +8,8 @@ A thin Go service that guards the OTLP log write path in front of Loki. SDKs pos
 
 - Write-path authentication: `POST /v1/logs` with `Authorization: Bearer <proxy-token>` checked against a local allow-list; valid requests forwarded to Loki's OTLP endpoint, invalid ones rejected with `401`
 - Label-blind forwarding: the proxy never reads, adds, or rewrites OTLP attributes or Loki labels — it only authenticates and proxies
-- Own token store: proxy-issued tokens kept in SQLite; deactivation is immediate (a token switched off fails the next write — no restart, no reload — and is never deleted, so it can be reactivated)
-- Grafana-authenticated admin plane: a minimal GUI and management API for minting, listing, and toggling write tokens active or inactive, gated by a valid Grafana token (Grafana is the identity provider — the proxy has no user accounts of its own)
+- Own token store: proxy-issued tokens kept in SQLite; deactivation is immediate and reversible (a token switched off fails the next write — no restart, no reload — and can be reactivated); tokens can also be deleted outright (permanent)
+- Grafana-authenticated admin plane: a minimal GUI and management API for minting, listing, toggling (active/inactive), and deleting write tokens, gated by a valid Grafana token (Grafana is the identity provider — the proxy has no user accounts of its own)
 - Single host, planes split by URL path: write path under `/v1/logs`, admin GUI and management API under their own paths, one address behind one reverse proxy
 
 ## Tech Stack
@@ -29,12 +29,12 @@ A Grafana token never authenticates a write; a write token never grants admin ac
 
 ## Token Store
 
-Per write token: a **name** (display-only label, never matched against payloads, no authorization meaning), an **active flag**, and the **token value in plaintext** (readable back in the GUI — chosen for convenience on a self-hosted, single-operator stack). The name exists only so the operator recognises which token to deactivate. Revoking sets `active` to false rather than deleting the row, so tokens are kept and can be reactivated.
+Per write token: a **name** (display-only label, never matched against payloads, no authorization meaning), an **active flag**, and the **token value in plaintext** (readable back in the GUI — chosen for convenience on a self-hosted, single-operator stack). The name exists only so the operator recognises which token to deactivate or delete. Deactivating sets `active` to false (the row is kept and can be reactivated); deleting removes the row permanently. Both operations are available.
 
 ## Non-Functional Requirements
 
 - **Never break ingestion semantics:** the proxy forwards bodies unchanged; the frozen Loki label policy (`project`, `service_name`, `level` as the only index labels) is owned upstream by the SDKs and downstream by Loki.
-- **Immediate (de)activation:** flipping a token's active flag takes effect on the next request without restart or reload; tokens are deactivated, never deleted.
+- **Immediate (de)activation:** flipping a token's active flag takes effect on the next request without restart or reload. Tokens can be deactivated (reversible) or deleted (permanent).
 - **Single binary:** no cgo, no external runtime dependencies, so the same artifact runs natively on macOS and as a minimal container on the server.
 
 ## Architecture

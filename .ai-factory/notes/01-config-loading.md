@@ -19,7 +19,7 @@ The proxy reads its four runtime settings — listen address, Loki base URL, Gra
 - Env vars and canon defaults:
   - `PROXY_LISTEN` → `ListenAddr`, default `:4318`.
   - `LOKI_URL` → `LokiURL`, default `http://localhost:3100`.
-  - `GRAFANA_URL` → `GrafanaURL`, default `http://localhost:3030`.
+  - `GRAFANA_URL` → `GrafanaURL`, default `http://localhost:3000`.
   - `DB_PATH` → `DBPath`, default `./proxy.db`.
 - Validation, fail-fast, inside `Load()` after resolution:
   - `ListenAddr` must be non-empty (a bare `:4318` is valid — only emptiness is rejected here; binding is the server's job, task 02).
