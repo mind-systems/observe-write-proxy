@@ -1,0 +1,33 @@
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Go
+/observe-write-proxy
+*.exe
+*.test
+*.out
+vendor/
+
+# Local runtime state (SQLite token store, logs)
+*.db
+*.db-shm
+*.db-wal
+*.log
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# AI tooling (reproducible; not part of the project)
+.agents/
+.claude/skills/
+.ai-factory.json
+
+# Misc temp
+.tmp
+*.tmp
+*.bak
