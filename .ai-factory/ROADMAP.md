@@ -6,7 +6,7 @@
 
 ### Phase 1 — Service foundation
 
-- [ ] **Config loading** — No configuration layer exists yet. Add `internal/config` with `Config{ListenAddr, LokiURL, GrafanaURL, DBPath}` loaded by `Load()` from env (`PROXY_LISTEN`, `LOKI_URL`, `GRAFANA_URL`, `DB_PATH`) with flag override and canon defaults (`:4318`, `http://localhost:3100`, `http://localhost:3000`, `./proxy.db`); validate URLs parse and paths are non-empty, failing fast. The forward target `<LokiURL>/otlp/v1/logs` is joined later in `proxy`, not stored, to avoid double slashes. Spec: `.ai-factory/notes/01-config-loading.md`.
+- [x] **Config loading** — No configuration layer exists yet. Add `internal/config` with `Config{ListenAddr, LokiURL, GrafanaURL, DBPath}` loaded by `Load()` from env (`PROXY_LISTEN`, `LOKI_URL`, `GRAFANA_URL`, `DB_PATH`) with flag override and canon defaults (`:4318`, `http://localhost:3100`, `http://localhost:3000`, `./proxy.db`); validate URLs parse and paths are non-empty, failing fast. The forward target `<LokiURL>/otlp/v1/logs` is joined later in `proxy`, not stored, to avoid double slashes. Spec: `.ai-factory/notes/01-config-loading.md`. [5m 40s]
 - [ ] **HTTP server + lifecycle** — Nothing serves HTTP yet. In `cmd/proxy/main.go` load config, build an `http.ServeMux`, run an `*http.Server` with read/write/idle timeouts, and shut down gracefully on `SIGINT`/`SIGTERM` via `signal.NotifyContext` + `server.Shutdown`. Add `/healthz`→200; mount `/v1/logs`, `/api/tokens`, `/` as placeholders filled by later tasks. Owns the skeleton and lifecycle only — no auth, store, or forwarding. Spec: `.ai-factory/notes/02-http-server-lifecycle.md`.
 
 ### Phase 2 — Write-path forwarding
