@@ -17,12 +17,21 @@ COPY . .
 # Makefile's `build` target.
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-s -w" -o /proxy ./cmd/proxy
 
+# Distroless has no shell, so the final stage cannot `RUN mkdir`. Pre-create
+# the SQLite data directory here, owned by the distroless nonroot uid/gid
+# (65532:65532), so it can be copied straight into the final stage. Without
+# this, a fresh named volume mounts root-owned and store.Open's MkdirAll is a
+# no-op on the existing mountpoint — the SQLite open at DB_PATH then fails
+# with EACCES under uid 65532 and the proxy crash-loops.
+RUN mkdir -p /data && chown 65532:65532 /data
+
 # --- Final -------------------------------------------------------------------
 # Distroless: no shell, no package manager, no web/ copy — the GUI assets
 # already live inside the binary.
 FROM gcr.io/distroless/static:nonroot AS final
 
 COPY --from=build /proxy /proxy
+COPY --from=build --chown=65532:65532 /data /data
 
 # Runtime config is entirely env-driven (see internal/config, note 01):
 #   PROXY_LISTEN  - listen address (default here documents the canon port only)
