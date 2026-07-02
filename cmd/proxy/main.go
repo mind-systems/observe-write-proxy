@@ -13,7 +13,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/mind-systems/observe-write-proxy/internal/admin"
 	"github.com/mind-systems/observe-write-proxy/internal/config"
+	"github.com/mind-systems/observe-write-proxy/internal/grafana"
 	"github.com/mind-systems/observe-write-proxy/internal/proxy"
 	"github.com/mind-systems/observe-write-proxy/internal/store"
 )
@@ -38,7 +40,13 @@ func main() {
 	}
 	defer st.Close()
 
-	mux := newMux(st, proxy.NewHandler(fwd))
+	gclient, err := grafana.NewClient(cfg.GrafanaURL)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	mux := newMux(st, proxy.NewHandler(fwd), admin.RequireGrafana(gclient))
 
 	srv := &http.Server{
 		Addr:              cfg.ListenAddr,
@@ -82,16 +90,19 @@ func main() {
 }
 
 // newMux builds the route table, planes split by path per canon. /healthz
-// and /v1/logs are real handlers — /v1/logs gated by the Bearer auth
-// middleware backed by st — and every other route is a placeholder that
-// later tasks replace.
-func newMux(st *store.Store, h *proxy.Handler) *http.ServeMux {
+// and /v1/logs are real handlers — /v1/logs gated by the write-plane Bearer
+// auth middleware backed by st — and /api/tokens[/] are gated by gate, the
+// admin-plane Grafana auth middleware; they remain handleNotImplemented
+// placeholders until a later task adds the real management handlers behind
+// this same gate. / stays ungated: the static GUI page only collects the
+// operator's Grafana token, so gating it would lock the operator out.
+func newMux(st *store.Store, h *proxy.Handler, gate func(http.Handler) http.Handler) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/healthz", handleHealthz)
 	mux.Handle("/v1/logs", proxy.NewAuthMiddleware(st, h))
-	mux.HandleFunc("/api/tokens", handleNotImplemented)
-	mux.HandleFunc("/api/tokens/", handleNotImplemented)
+	mux.Handle("/api/tokens", gate(http.HandlerFunc(handleNotImplemented)))
+	mux.Handle("/api/tokens/", gate(http.HandlerFunc(handleNotImplemented)))
 	mux.HandleFunc("/", handleNotImplemented)
 
 	return mux
