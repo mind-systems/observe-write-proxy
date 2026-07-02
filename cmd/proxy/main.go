@@ -46,7 +46,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	mux := newMux(st, proxy.NewHandler(fwd), admin.NewTokenHandlers(st), admin.RequireGrafana(gclient))
+	static, err := admin.NewStaticHandler()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	mux := newMux(st, proxy.NewHandler(fwd), admin.NewTokenHandlers(st), admin.RequireGrafana(gclient), static)
 
 	srv := &http.Server{
 		Addr:              cfg.ListenAddr,
@@ -93,16 +99,19 @@ func main() {
 // and /v1/logs are real handlers — /v1/logs gated by the write-plane Bearer
 // auth middleware backed by st — and /api/tokens[/] serve the real
 // management API (th), gated by gate, the admin-plane Grafana auth
-// middleware. / stays ungated: the static GUI page only collects the
-// operator's Grafana token, so gating it would lock the operator out.
-func newMux(st *store.Store, h *proxy.Handler, th *admin.TokenHandlers, gate func(http.Handler) http.Handler) *http.ServeMux {
+// middleware. / serves the embedded static GUI (static) and stays ungated:
+// the page only collects the operator's Grafana token, so gating it would
+// lock the operator out. ServeMux's longest-prefix matching keeps the more
+// specific patterns above ahead of this catch-all regardless of
+// registration order.
+func newMux(st *store.Store, h *proxy.Handler, th *admin.TokenHandlers, gate func(http.Handler) http.Handler, static http.Handler) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/healthz", handleHealthz)
 	mux.Handle("/v1/logs", proxy.NewAuthMiddleware(st, h))
 	mux.Handle("/api/tokens", gate(http.HandlerFunc(th.Collection)))
 	mux.Handle("/api/tokens/", gate(http.HandlerFunc(th.Item)))
-	mux.HandleFunc("/", handleNotImplemented)
+	mux.Handle("/", static)
 
 	return mux
 }
@@ -112,11 +121,4 @@ func newMux(st *store.Store, h *proxy.Handler, th *admin.TokenHandlers, gate fun
 func handleHealthz(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("ok"))
-}
-
-// handleNotImplemented is the placeholder for routes wired by later tasks.
-// It answers 501 rather than a silent 200, so a half-wired build is
-// obvious.
-func handleNotImplemented(w http.ResponseWriter, _ *http.Request) {
-	http.Error(w, "not implemented yet", http.StatusNotImplemented)
 }
