@@ -12,7 +12,7 @@
 ### Phase 2 — Write-path forwarding
 
 - [x] **Loki forwarder** — `internal/proxy` does not exist. Add a `Forwarder` holding the resolved `<loki>/otlp/v1/logs` target and a timeout-bounded `*http.Client`; `Forward(ctx, body, contentType, contentEncoding)` streams the request body through **unchanged** (label-blind — never read or parse it), copies `Content-Type`/`Content-Encoding`, relays Loki's status and body, and maps transport failures (refused/DNS/timeout) to `502`/`504`. Guard: no body buffering, no hop-by-hop headers. Spec: `.ai-factory/notes/03-loki-forwarder.md`. [6m 19s]
-- [ ] **/v1/logs route** — No write endpoint yet. Add the `POST /v1/logs` handler: `405` on non-POST, read `Content-Type`/`Content-Encoding`, call the `Forwarder`, write back Loki's status and body. Auth is intentionally absent here — task 07 adds Bearer middleware in front without touching this handler. Guard: do not inspect or mutate the OTLP payload. Spec: `.ai-factory/notes/04-write-logs-route.md`.
+- [x] **/v1/logs route** — No write endpoint yet. Add the `POST /v1/logs` handler: `405` on non-POST, read `Content-Type`/`Content-Encoding`, call the `Forwarder`, write back Loki's status and body. Auth is intentionally absent here — task 07 adds Bearer middleware in front without touching this handler. Guard: do not inspect or mutate the OTLP payload. Spec: `.ai-factory/notes/04-write-logs-route.md`. [4m 56s]
 
 ### Phase 3 — Token store
 

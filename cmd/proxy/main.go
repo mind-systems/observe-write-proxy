@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/mind-systems/observe-write-proxy/internal/config"
+	"github.com/mind-systems/observe-write-proxy/internal/proxy"
 )
 
 func main() {
@@ -23,7 +24,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	mux := newMux()
+	fwd, err := proxy.NewForwarder(cfg.LokiURL)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	mux := newMux(proxy.NewHandler(fwd))
 
 	srv := &http.Server{
 		Addr:              cfg.ListenAddr,
@@ -66,14 +73,14 @@ func main() {
 	}
 }
 
-// newMux builds the route table, planes split by path per canon. Only
-// /healthz is a real handler here; every other route is a placeholder that
+// newMux builds the route table, planes split by path per canon. /healthz
+// and /v1/logs are real handlers; every other route is a placeholder that
 // later tasks replace.
-func newMux() *http.ServeMux {
+func newMux(h *proxy.Handler) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/healthz", handleHealthz)
-	mux.HandleFunc("/v1/logs", handleNotImplemented)
+	mux.Handle("/v1/logs", h)
 	mux.HandleFunc("/api/tokens", handleNotImplemented)
 	mux.HandleFunc("/api/tokens/", handleNotImplemented)
 	mux.HandleFunc("/", handleNotImplemented)
