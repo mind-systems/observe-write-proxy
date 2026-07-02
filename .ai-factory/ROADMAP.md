@@ -45,4 +45,4 @@
 
 ### Phase 9 — End-to-end verification
 
-- [ ] **E2E verify** — Add `verify.sh` exercising the full path against a running proxy + Loki (+ Grafana): mint a token (`POST /api/tokens` with a Grafana Bearer), write OTLP through `POST /v1/logs` with it → expect 2xx and confirm the line via a Loki `query_range`; a bogus token → `401`; then `PATCH …{active:false}` and re-write → `401` (proves deactivation takes effect on the next write, no restart). Endpoints overridable via env; document expected status codes. Spec: `.ai-factory/notes/16-e2e-verification.md`.
+- [x] **E2E verify** — Add `verify.sh` exercising the full path against a running proxy + Loki (+ Grafana): mint a token (`POST /api/tokens` with a Grafana Bearer), write OTLP through `POST /v1/logs` with it → expect 2xx and confirm the line via a Loki `query_range`; a bogus token → `401`; then `PATCH …{active:false}` and re-write → `401` (proves deactivation takes effect on the next write, no restart). Endpoints overridable via env; document expected status codes. Spec: `.ai-factory/notes/16-e2e-verification.md`. [16m 21s]
