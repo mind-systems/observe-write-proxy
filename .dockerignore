@@ -1,0 +1,35 @@
+# Version control & AI tooling
+.git
+.ai-factory
+.claude
+.agents
+
+# Local build output
+bin/
+
+# Local SQLite state (token store)
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+*.log
+
+# Environment & secrets
+.env
+.env.*
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Misc temp
+.tmp
+*.tmp
+*.bak
+
+# Note: web/ is NOT excluded — the GUI assets are compiled into the
+# binary via //go:embed web (see web_embed.go) and must be present
+# in the build context.

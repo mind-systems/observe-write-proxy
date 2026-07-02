@@ -41,7 +41,7 @@
 
 ### Phase 8 — Server deployment
 
-- [ ] **Container image** — Add a multi-stage `Dockerfile`: builder `golang:1.19` with `CGO_ENABLED=0 go build` (embedded assets ship in the binary, no asset COPY); final `gcr.io/distroless/static` (or scratch) with just the binary, non-root, `EXPOSE 4318`, env-driven config; `DB_PATH` on a mounted volume so the token store persists. Guard: produces ONLY the image — it does **not** edit the root repo's `backend/docker-compose.yml`; compose wiring is owned independently by the root repo. Spec: `.ai-factory/notes/15-container-image.md`.
+- [x] **Container image** — Add a multi-stage `Dockerfile`: builder `golang:1.19` with `CGO_ENABLED=0 go build` (embedded assets ship in the binary, no asset COPY); final `gcr.io/distroless/static` (or scratch) with just the binary, non-root, `EXPOSE 4318`, env-driven config; `DB_PATH` on a mounted volume so the token store persists. Guard: produces ONLY the image — it does **not** edit the root repo's `backend/docker-compose.yml`; compose wiring is owned independently by the root repo. Spec: `.ai-factory/notes/15-container-image.md`. [14m 55s]
 
 ### Phase 9 — End-to-end verification
 
