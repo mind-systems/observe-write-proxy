@@ -17,7 +17,7 @@
 ### Phase 3 — Token store
 
 - [x] **SQLite store init** — No persistence yet. Add `internal/store` with `Open(path)` using pure-Go `modernc.org/sqlite` (`sql.Open("sqlite", …)`, the only new dependency, keeps the binary cgo-free), wrapping `*sql.DB`. Create-if-not-exists `tokens(id TEXT PK, name TEXT NOT NULL, token TEXT NOT NULL UNIQUE, active INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL)`; set `journal_mode=WAL` and a `busy_timeout`. `active` backs reversible deactivation; rows can also be hard-deleted (see token operations). Spec: `.ai-factory/notes/05-sqlite-store-init.md`. [11m 58s]
-- [ ] **Token operations** — Build the store API on `*Store`: `Create(name)` mints `id` + `token`=`otlp_`+base64url(32 `crypto/rand` bytes), inserts `active=1`, returns the row; `List()` returns all rows incl. plaintext `token` and `active`; `SetActive(id, bool)` toggles the flag (reversible deactivate/reactivate); `Delete(id)` removes a token permanently; `Lookup(token)` returns valid only when the row exists **and** `active=1`. Guard: `Lookup` must filter on `active`; unique constraint on `token`. Spec: `.ai-factory/notes/06-token-operations.md`.
+- [x] **Token operations** — Build the store API on `*Store`: `Create(name)` mints `id` + `token`=`otlp_`+base64url(32 `crypto/rand` bytes), inserts `active=1`, returns the row; `List()` returns all rows incl. plaintext `token` and `active`; `SetActive(id, bool)` toggles the flag (reversible deactivate/reactivate); `Delete(id)` removes a token permanently; `Lookup(token)` returns valid only when the row exists **and** `active=1`. Guard: `Lookup` must filter on `active`; unique constraint on `token`. Spec: `.ai-factory/notes/06-token-operations.md`. [4m 20s]
 
 ### Phase 4 — Write authentication
 
