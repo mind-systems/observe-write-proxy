@@ -46,7 +46,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	mux := newMux(st, proxy.NewHandler(fwd), admin.RequireGrafana(gclient))
+	mux := newMux(st, proxy.NewHandler(fwd), admin.NewTokenHandlers(st), admin.RequireGrafana(gclient))
 
 	srv := &http.Server{
 		Addr:              cfg.ListenAddr,
@@ -91,18 +91,17 @@ func main() {
 
 // newMux builds the route table, planes split by path per canon. /healthz
 // and /v1/logs are real handlers — /v1/logs gated by the write-plane Bearer
-// auth middleware backed by st — and /api/tokens[/] are gated by gate, the
-// admin-plane Grafana auth middleware; they remain handleNotImplemented
-// placeholders until a later task adds the real management handlers behind
-// this same gate. / stays ungated: the static GUI page only collects the
+// auth middleware backed by st — and /api/tokens[/] serve the real
+// management API (th), gated by gate, the admin-plane Grafana auth
+// middleware. / stays ungated: the static GUI page only collects the
 // operator's Grafana token, so gating it would lock the operator out.
-func newMux(st *store.Store, h *proxy.Handler, gate func(http.Handler) http.Handler) *http.ServeMux {
+func newMux(st *store.Store, h *proxy.Handler, th *admin.TokenHandlers, gate func(http.Handler) http.Handler) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/healthz", handleHealthz)
 	mux.Handle("/v1/logs", proxy.NewAuthMiddleware(st, h))
-	mux.Handle("/api/tokens", gate(http.HandlerFunc(handleNotImplemented)))
-	mux.Handle("/api/tokens/", gate(http.HandlerFunc(handleNotImplemented)))
+	mux.Handle("/api/tokens", gate(http.HandlerFunc(th.Collection)))
+	mux.Handle("/api/tokens/", gate(http.HandlerFunc(th.Item)))
 	mux.HandleFunc("/", handleNotImplemented)
 
 	return mux
