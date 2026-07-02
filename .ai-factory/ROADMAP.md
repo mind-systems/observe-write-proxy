@@ -37,7 +37,7 @@
 ### Phase 7 — Packaging & native run
 
 - [x] **Build automation** — Add a root `Makefile`: `build` = `CGO_ENABLED=0 go build -ldflags '-s -w' -o bin/proxy ./cmd/proxy` (static, cgo-free, embeds `web/`); plus `run`, `test` (`go test ./...`), `fmt` (`gofmt` + `go vet`), `tidy`. The `CGO_ENABLED=0` invariant ties to the pure-Go SQLite driver — no C toolchain required. Guard: `bin/` stays gitignored. Spec: `.ai-factory/notes/13-build-automation.md`. [3m 49s]
-- [ ] **Local run docs** — Document native local run (no Docker on the dev machine) in `README.md`: the four env vars (`PROXY_LISTEN`, `LOKI_URL`, `GRAFANA_URL`, `DB_PATH`) with defaults, and how a consuming SDK is pointed at the proxy — `init` `headers` = `Authorization: Bearer <token>`, OTLP endpoint = the proxy's `/v1/logs`. House doc style: behavior, prose, no trees. Out of scope: Docker image, e2e. Spec: `.ai-factory/notes/14-local-run-docs.md`.
+- [x] **Local run docs** — Document native local run (no Docker on the dev machine) in `README.md`: the four env vars (`PROXY_LISTEN`, `LOKI_URL`, `GRAFANA_URL`, `DB_PATH`) with defaults, and how a consuming SDK is pointed at the proxy — `init` `headers` = `Authorization: Bearer <token>`, OTLP endpoint = the proxy's `/v1/logs`. House doc style: behavior, prose, no trees. Out of scope: Docker image, e2e. Spec: `.ai-factory/notes/14-local-run-docs.md`. [4m 14s]
 
 ### Phase 8 — Server deployment
 

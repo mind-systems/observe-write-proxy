@@ -16,7 +16,22 @@ Both planes are served from one address, separated by URL path.
 
 ## Running it
 
-The proxy is a single static binary. Locally it runs as a native process — no Docker required on the development machine. On the server the same binary runs as a container alongside Loki and Grafana, wired up by the observability stack's compose file.
+The proxy is a single static binary. Build it with `make build`, which produces `./bin/proxy`, then start it with `./bin/proxy` — or skip the build step and run it straight from source with `make run`. Locally it is the only process to start beyond the Loki and Grafana the stack already runs: no Docker required on the development machine. With everything left at its defaults it listens on `:4318`, forwards writes to a local Loki at `:3100`, validates admin tokens against a local Grafana at `:3000`, and keeps its token store in `./proxy.db` in the working directory. On the server the same binary runs as a container alongside Loki and Grafana, wired up by the observability stack's compose file.
+
+## Configuration
+
+Four settings control the proxy, each an environment variable with a canon default.
+
+- `PROXY_LISTEN` — the address the proxy binds for both the write and admin planes; defaults to `:4318`.
+- `LOKI_URL` — Loki's **base** URL; the proxy appends `/otlp/v1/logs` to it when forwarding writes, so this must not already include that path; defaults to `http://localhost:3100`.
+- `GRAFANA_URL` — the base URL of the Grafana instance used to validate admin (Grafana) tokens; defaults to `http://localhost:3000`.
+- `DB_PATH` — the filesystem path to the SQLite token store; defaults to `./proxy.db`.
+
+Each setting also has a command-line flag fallback (`-listen`, `-loki-url`, `-grafana-url`, `-db-path`); a flag overrides the environment variable, which overrides the default.
+
+## Pointing an SDK at the proxy
+
+A consuming `observe-*` SDK reaches the proxy exactly as it would reach Loki's OTLP endpoint directly, via two `init`-time settings: point the OTLP logs endpoint at the proxy's `/v1/logs` (e.g. `http://localhost:4318/v1/logs` locally, not Loki's `/otlp/v1/logs` — the proxy forwards internally to the latter), and pass a write token through the SDK's `init` `headers` as `Authorization: Bearer <token>`. This Bearer token is the proxy's **own** write token, checked per request against its local store — it is not a Grafana token, and the SDK never talks to Grafana. The token itself is minted in the admin GUI (minting is not covered here). An unknown or deactivated token gets a `401`, so a misconfigured SDK fails loudly rather than silently dropping logs.
 
 ## More
 
