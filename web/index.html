@@ -3,8 +3,119 @@
 <head>
   <meta charset="UTF-8">
   <title>observe-write-proxy</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+    body {
+      max-width: 960px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      line-height: 1.4;
+    }
+    h1 {
+      font-size: 1.25rem;
+    }
+    section, form {
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      border: 1px solid #8884;
+      border-radius: 6px;
+    }
+    label {
+      display: inline-block;
+      min-width: 6rem;
+    }
+    input[type="password"],
+    input[type="text"] {
+      font-family: inherit;
+      font-size: 1rem;
+      padding: 0.3rem 0.5rem;
+      min-width: 20rem;
+    }
+    button {
+      font-size: 1rem;
+      padding: 0.35rem 0.9rem;
+      cursor: pointer;
+    }
+    button.danger {
+      background: #c0392b;
+      color: #fff;
+      border: 1px solid #922b21;
+      border-radius: 4px;
+    }
+    #status {
+      min-height: 1.2rem;
+      color: #c0392b;
+    }
+    #new-token-panel {
+      background: #2ecc7122;
+      border: 1px solid #27ae60;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1.5rem;
+    }
+    #new-token-panel[hidden] {
+      display: none;
+    }
+    #new-token-value {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      user-select: all;
+      word-break: break-all;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.5rem;
+      border-bottom: 1px solid #8884;
+      vertical-align: middle;
+    }
+    td.token-cell {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      user-select: all;
+      word-break: break-all;
+    }
+  </style>
 </head>
 <body>
-  <p>Loading…</p>
+  <h1>observe-write-proxy — token management</h1>
+
+  <form id="token-bar">
+    <label for="grafana-token">Grafana token</label>
+    <input type="password" id="grafana-token" autocomplete="off" placeholder="paste Grafana token">
+    <button id="connect" type="submit">Connect</button>
+  </form>
+
+  <div id="status"></div>
+
+  <section id="new-token-panel" hidden>
+    <strong>New token created — copy it for your source's config:</strong>
+    <div id="new-token-value"></div>
+  </section>
+
+  <form id="create-form">
+    <label for="new-name">Name</label>
+    <input type="text" id="new-name" autocomplete="off" placeholder="e.g. tradeoxy-broker">
+    <button id="create" type="submit">Create</button>
+  </form>
+
+  <table id="tokens">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Token</th>
+        <th>Created</th>
+        <th>Active</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script src="app.js" defer></script>
 </body>
 </html>
