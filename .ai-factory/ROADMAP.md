@@ -21,7 +21,7 @@
 
 ### Phase 4 — Write authentication
 
-- [ ] **Bearer auth on /v1/logs** — `/v1/logs` is currently open. Add Bearer middleware in front of the task-04 handler: parse `Authorization: Bearer <token>` (case-insensitive scheme), `401` on missing/malformed; `store.Lookup` per request — unknown or inactive → `401`, store error → `500`, valid → forward. Per-request lookup with no cache is what makes deactivation effective on the very next write. Guard: same `401` for unknown vs inactive (no oracle); never log the token. Spec: `.ai-factory/notes/07-write-bearer-auth.md`.
+- [x] **Bearer auth on /v1/logs** — `/v1/logs` is currently open. Add Bearer middleware in front of the task-04 handler: parse `Authorization: Bearer <token>` (case-insensitive scheme), `401` on missing/malformed; `store.Lookup` per request — unknown or inactive → `401`, store error → `500`, valid → forward. Per-request lookup with no cache is what makes deactivation effective on the very next write. Guard: same `401` for unknown vs inactive (no oracle); never log the token. Spec: `.ai-factory/notes/07-write-bearer-auth.md`. [5m 33s]
 
 ### Phase 5 — Grafana-authenticated admin API
 
