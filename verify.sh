@@ -24,18 +24,18 @@
 #                                                            -> 401
 #
 # Usage:
-#   GRAFANA_TOKEN=<grafana-user-token> ./verify.sh
+#   GRAFANA_TOKEN=<grafana-token> ./verify.sh
 #
 # Env overrides (canon defaults shown):
 #   PROXY_URL      http://localhost:4318
 #   LOKI_URL       http://localhost:3100
 #   GRAFANA_TOKEN  required, no default — see below.
 #
-# GRAFANA_TOKEN must be a Grafana user/session-style token: the proxy
-# validates it via GET /api/user, so a bare service-account token may not
-# resolve a user on all Grafana versions and would surface as a confusing
-# 401 on the mint step. Obtain one from Grafana -> your user profile (API
-# tokens), or copy the session token your browser sends after logging in.
+# GRAFANA_TOKEN accepts any valid Grafana token: the proxy applies no role
+# gate, validating it via GET /api/user, where any 200 response means
+# valid. A Grafana service-account token (glsa_..., created under
+# Administration -> Service accounts -> Add token) is the recommended
+# choice; a user API token or a session token also works.
 
 set -euo pipefail
 
@@ -66,11 +66,10 @@ json_field() {
 if [ -z "${GRAFANA_TOKEN:-}" ]; then
   echo "GRAFANA_TOKEN is not set." >&2
   echo "" >&2
-  echo "The proxy validates admin tokens via GET /api/user, so this must be a" >&2
-  echo "Grafana user/session-style token — a bare service-account token may not" >&2
-  echo "resolve a user on all Grafana versions and would surface as a confusing" >&2
-  echo "401 on the mint step. Obtain one from Grafana -> your user profile (API" >&2
-  echo "tokens), or copy the session token your browser sends after logging in." >&2
+  echo "The proxy applies no role gate — any valid Grafana token works. A" >&2
+  echo "Grafana service-account token (glsa_..., created under Administration ->" >&2
+  echo "Service accounts -> Add token) is the recommended choice; a user API" >&2
+  echo "token or a session token also works." >&2
   exit 1
 fi
 
