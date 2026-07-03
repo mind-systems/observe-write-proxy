@@ -120,14 +120,18 @@ func (h *TokenHandlers) Item(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPatch:
 		var body struct {
-			Active bool `json:"active"`
+			Active *bool `json:"active"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			http.Error(w, "malformed request body", http.StatusBadRequest)
 			return
 		}
+		if body.Active == nil {
+			http.Error(w, "active field is required", http.StatusBadRequest)
+			return
+		}
 
-		if err := h.store.SetActive(id, body.Active); err != nil {
+		if err := h.store.SetActive(id, *body.Active); err != nil {
 			if errors.Is(err, store.ErrNotFound) {
 				http.Error(w, "not found", http.StatusNotFound)
 				return
