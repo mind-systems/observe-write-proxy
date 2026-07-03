@@ -89,6 +89,10 @@ func (h *TokenHandlers) Collection(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "malformed request body", http.StatusBadRequest)
 			return
 		}
+		if strings.TrimSpace(body.Name) == "" {
+			http.Error(w, "name must not be empty", http.StatusBadRequest)
+			return
+		}
 
 		t, err := h.store.Create(body.Name)
 		if err != nil {

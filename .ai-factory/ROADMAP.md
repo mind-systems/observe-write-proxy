@@ -46,3 +46,11 @@
 ### Phase 9 — End-to-end verification
 
 - [x] **E2E verify** — Add `verify.sh` exercising the full path against a running proxy + Loki (+ Grafana): mint a token (`POST /api/tokens` with a Grafana Bearer), write OTLP through `POST /v1/logs` with it → expect 2xx and confirm the line via a Loki `query_range`; a bogus token → `401`; then `PATCH …{active:false}` and re-write → `401` (proves deactivation takes effect on the next write, no restart). Endpoints overridable via env; document expected status codes. Spec: `.ai-factory/notes/16-e2e-verification.md`. [16m 21s]
+
+### Phase 10 — Post-review fixes
+
+> Three findings from the code review of the shipped implementation. All low-impact, none block the milestone; batch them before the next tag.
+
+- [x] **Server-side name validation on create** — `POST /api/tokens` currently passes `body.Name` straight to `store.Create` with no check, so `{"name":""}` mints a token and returns `201`. Spec (note 10) requires an empty or whitespace-only `name` to be `400`. Add the guard in the `Collection` POST branch (`internal/admin/tokens.go`): `strings.TrimSpace(body.Name) == ""` → `400`. The GUI already guards client-side; this closes the direct-API gap. Spec: `.ai-factory/notes/17-create-name-validation.md`. [3m 28s]
+- [ ] **PATCH active must reject a missing field** — `PATCH /api/tokens/<id>` decodes into `struct{ Active bool }`, so a body omitting `active` (e.g. `{}`) silently defaults to `false` and deactivates the token with `200`. Change the decode target to `*bool` and return `400` when it is nil, so an omitted `active` is a client error, not a silent state change (`internal/admin/tokens.go`, Item PATCH branch). Spec: `.ai-factory/notes/18-patch-active-required.md`.
+- [ ] **Fix verify.sh Grafana-token guidance** — `verify.sh` header + the unset-token error warn that a service-account token "may not resolve a user … confusing 401" and steer the operator to a user/session token. This contradicts the verified fact (note 08 in this repo): a `glsa_…` service-account token returns `200` from `GET /api/user` on the local stack. Rewrite the guidance to say any valid Grafana token — service-account (`glsa_…`) included — works, matching `Validate`'s no-role-gate policy. Text-only; the flow is correct. Spec: `.ai-factory/notes/19-verify-token-guidance.md`.
