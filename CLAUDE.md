@@ -49,12 +49,12 @@ Distinguishing the planes by path, not by port, is deliberate: a single exposed 
 
 Unlike the `observe-*` SDKs, this proxy is **not pinned by consumers via a git URL** — nothing depends on it as a library. It is a **deployed service**:
 
-- **Local (macOS):** runs as a native single binary — no Docker on the developer machine, per the stack's hard constraint.
+- **Local (macOS):** runs as a native single binary — no Docker required on the developer machine by default (the stack's local default, not a ban).
 - **Server:** the same binary runs as a container, added as a service alongside Loki and Grafana in the root observability repo's `backend/docker-compose.yml`. That compose file — the cross-service wiring — lives in the **root** coordinator repo, not here.
 
 ## Relationship to the wider system
 
-This is one sub-repo of the local observability stack. The **root** `observability` repo is the coordinator (architecture, roadmap, the shared compose file); the `observe-swift` / `observe-dart` / `observe-js` SDKs produce the OTLP traffic this proxy guards and already carry the `Authorization: Bearer …` credential through their `init` `headers` parameter. The read path is separate and does not pass through here: the `observe-logs` skill queries Loki directly and never writes.
+This is one sub-repo of the local observability stack. The **root** `observability` repo is the coordinator (architecture, roadmap, the shared compose file); the `observe-swift` / `observe-dart` / `observe-js` SDKs produce the OTLP traffic this proxy guards and already carry the `Authorization: Bearer …` credential through their `init` `headers` parameter. The read path is separate and does not pass through here: the `observe-logs` skill queries Loki through **Grafana's datasource-proxy API**, never this proxy and never Loki directly, and never writes.
 
 ## Language
 
