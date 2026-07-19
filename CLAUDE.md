@@ -1,7 +1,3 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## What this is
 
 A thin **Go service that guards the OTLP log write path** in front of Loki. SDKs no longer post logs straight to Loki; they post to this proxy, which authenticates each write against its own token store and forwards only valid traffic on to Loki. It exists so the log-ingestion endpoint can be exposed on a network (a shared server, reachable by mobile and browser clients) without becoming an open, unauthenticated log sink.
